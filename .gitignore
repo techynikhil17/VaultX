@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+build/
+next-env.d.ts
+
+# Environment Variables
+.env*.local
+.env
+*.pem
+
+# Supabase
+supabase/.temp/
+
+# Python
+venv/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Vercel
+.vercel
