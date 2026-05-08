@@ -3,64 +3,84 @@ import { useEffect, useState } from "react";
 import { useVault } from "@/lib/vault-context";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { Lock } from "lucide-react";
+import { Lock, Loader2, ShieldCheck } from "lucide-react";
+
+const supabase = createClient();
 
 export function UnlockGate({ children }: { children: React.ReactNode }) {
   const { unlocked, unlock, setUserId, userId } = useVault();
   const [pw, setPw] = useState("");
   const [busy, setBusy] = useState(false);
-  const supabase = createClient();
+  const [resolving, setResolving] = useState(true);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) setUserId(data.user.id);
+      setResolving(false);
     });
-  }, [setUserId, supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (unlocked) return <>{children}</>;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!userId) {
-      toast.error("Loading session...");
-      return;
-    }
+    if (!userId) { toast.error("Session not ready — please wait"); return; }
     setBusy(true);
     const ok = await unlock(pw);
     setBusy(false);
-    if (!ok) {
-      toast.error("Wrong master password");
-      return;
-    }
+    if (!ok) { toast.error("Wrong master password"); return; }
     toast.success("Vault unlocked");
     setPw("");
   }
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-6">
-      <form onSubmit={onSubmit} className="card p-8 w-full max-w-md">
-        <div className="w-12 h-12 rounded-xl bg-accent/10 text-accent flex items-center justify-center mb-4">
-          <Lock size={22} />
+      <div className="w-full max-w-md">
+        {/* Glow ring */}
+        <div className="flex justify-center mb-8">
+          <div className="relative">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-accent to-accent-2 flex items-center justify-center shadow-glow animate-glow-pulse">
+              <Lock size={32} className="text-white" />
+            </div>
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent to-accent-2 blur-xl opacity-30 -z-10" />
+          </div>
         </div>
-        <h2 className="text-xl font-semibold mb-1">Unlock vault</h2>
-        <p className="text-sm text-muted mb-6">
-          Enter your master password to derive the encryption key. It is never sent to the server.
-        </p>
-        <input
-          autoFocus
-          type="password"
-          className="input"
-          placeholder="Master password"
-          value={pw}
-          onChange={(e) => setPw(e.target.value)}
-        />
-        <button className="btn-primary w-full mt-4 py-2.5" disabled={busy || !pw}>
-          {busy ? "Unlocking..." : "Unlock"}
-        </button>
-        <p className="text-xs text-muted mt-4">
-          Tip: use the same password as your account login if this is your first time.
-        </p>
-      </form>
+
+        <form onSubmit={onSubmit} className="card p-8 border-white/10">
+          <h2 className="text-2xl font-bold mb-1 gradient-text">Unlock your vault</h2>
+          <p className="text-sm text-muted mb-8 leading-relaxed">
+            Your master password derives the encryption key locally. It never leaves your device.
+          </p>
+
+          {resolving ? (
+            <div className="flex items-center justify-center py-6 gap-2 text-muted text-sm">
+              <Loader2 size={16} className="animate-spin" />
+              <span>Loading session…</span>
+            </div>
+          ) : (
+            <>
+              <div className="mb-4">
+                <label className="label">Master password</label>
+                <input
+                  autoFocus
+                  type="password"
+                  className="input text-base"
+                  placeholder="Enter your master password"
+                  value={pw}
+                  onChange={(e) => setPw(e.target.value)}
+                />
+              </div>
+              <button className="btn-primary w-full py-3 text-base" disabled={busy || !pw}>
+                {busy ? <><Loader2 size={16} className="animate-spin" /> Deriving key…</> : <><ShieldCheck size={16} /> Unlock</>}
+              </button>
+              <p className="text-xs text-muted mt-4 text-center">
+                PBKDF2-SHA256 · 310,000 iterations · AES-256-GCM
+              </p>
+            </>
+          )}
+        </form>
+      </div>
     </div>
   );
 }

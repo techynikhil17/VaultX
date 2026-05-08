@@ -26,3 +26,7 @@ venv/
 
 # Vercel
 .vercel
+#Other
+.claude
+.superpowers
+.playwright-mcp
