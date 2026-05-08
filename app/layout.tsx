@@ -1,5 +1,12 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
 import { Toaster } from "sonner";
 import { VaultProvider } from "@/lib/vault-context";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -13,7 +20,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <body>
+      <body className={inter.className}>
         <RouteProgress />
         <VaultProvider>
           <div className="page-bg min-h-screen">
