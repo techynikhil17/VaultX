@@ -47,7 +47,7 @@ export default function SignupPage() {
       toast.error(error.message);
       return;
     }
-    // Keep spinner through navigation — component unmounts anyway
+    router.refresh();
     router.push("/dashboard");
   }
 

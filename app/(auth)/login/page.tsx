@@ -25,14 +25,18 @@ export default function LoginPage() {
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      // Only reset loading on error — on success keep spinner through the navigation
       setLoading(false);
-      toast.error(error.message);
+      if (error.message === "Invalid login credentials") {
+        toast.error("Invalid email or password — no account yet? Create one free.");
+      } else {
+        toast.error(error.message);
+      }
       return;
     }
-    // Fire-and-forget — don't await, don't block navigation
     if (data.user) supabase.from("activity_logs").insert({ user_id: data.user.id, action: "login" });
-    // Navigate immediately, keep loading=true so button stays in spinner state
+    // refresh() clears the Next.js router cache so the middleware sees the new
+    // auth cookie immediately — without it, push() can race the cookie write in production
+    router.refresh();
     router.push("/dashboard");
   }
 
