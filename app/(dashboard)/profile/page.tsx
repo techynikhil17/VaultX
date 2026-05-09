@@ -47,7 +47,7 @@ export default function ProfilePage() {
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const plain = JSON.stringify({ version: 1, exported_at: new Date().toISOString(), entries: decrypted });
       const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, exportKey, new TextEncoder().encode(plain));
-      const toB64 = (b: ArrayBuffer) => { let s = ""; new Uint8Array(b).forEach(x => s += String.fromCharCode(x)); return btoa(s); };
+      const toB64 = (b: Uint8Array | ArrayBuffer) => { const arr = b instanceof Uint8Array ? b : new Uint8Array(b); let s = ""; arr.forEach(x => s += String.fromCharCode(x)); return btoa(s); };
       const blob = new Blob([JSON.stringify({ salt: toB64(salt), iv: toB64(iv), ciphertext: toB64(ct) })], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a"); a.href = url; a.download = `vaultx-backup-${new Date().toISOString().slice(0, 10)}.enc.json`; a.click();

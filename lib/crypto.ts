@@ -11,11 +11,11 @@ function toB64(buf: ArrayBuffer | Uint8Array): string {
   return btoa(s);
 }
 
-function fromB64(b64: string): Uint8Array {
+function fromB64(b64: string): Uint8Array<ArrayBuffer> {
   const s = atob(b64);
   const out = new Uint8Array(s.length);
   for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
-  return out;
+  return out as Uint8Array<ArrayBuffer>;
 }
 
 export function getOrCreateSalt(userId: string): Uint8Array {
@@ -39,7 +39,7 @@ export async function deriveVaultKey(masterPassword: string, salt: Uint8Array): 
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt,
+      salt: salt as Uint8Array<ArrayBuffer>,
       iterations: PBKDF2_ITERATIONS,
       hash: "SHA-256",
     },

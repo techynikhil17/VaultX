@@ -190,7 +190,7 @@ const HEX_CHARS = "0123456789abcdef";
 
 function KeyDerivationVisual() {
   const arcRef   = useRef<SVGCircleElement>(null);
-  const numRef   = useRef<HTMLSpanElement>(null);
+  const numRef   = useRef<SVGTSpanElement>(null);
   const hexRef   = useRef<HTMLDivElement>(null);
   const labelRef = useRef<HTMLParagraphElement>(null);
 
