@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Copy, Check, Trash2, RefreshCw, ScanLine } from "lucide-react";
+import { Plus, Copy, Check, Trash2, ScanLine, X } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useVault } from "@/lib/vault-context";
@@ -21,7 +21,7 @@ function TOTPRing({ secs }: { secs: number }) {
       <circle cx={28} cy={28} r={RING_R} fill="none" stroke={color} strokeWidth={4}
         strokeDasharray={RING_CIRC} strokeDashoffset={offset} strokeLinecap="round"
         transform="rotate(-90 28 28)"
-        style={{ transition: "stroke-dashoffset 0.9s linear, stroke 0.3s" }}
+        style={{ transition: "stroke-dashoffset 0.9s linear, stroke 0.3s", filter: `drop-shadow(0 0 4px ${color}80)` }}
       />
       <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fill={color} fontSize="11" fontWeight="bold" fontFamily="monospace">{secs}</text>
     </svg>
@@ -40,7 +40,6 @@ export default function TOTPPage() {
   const [copied, setCopied] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Clock tick
   useEffect(() => {
     const id = setInterval(() => setSecs(totpSecondsRemaining()), 1000);
     return () => clearInterval(id);
@@ -68,7 +67,6 @@ export default function TOTPPage() {
 
   useEffect(() => { loadEntries(); }, [loadEntries]);
 
-  // Regenerate codes every second
   useEffect(() => {
     const gen = async () => {
       const fresh: Record<string, string> = {};
@@ -100,7 +98,6 @@ export default function TOTPPage() {
       for (let i = 0; i < arr.length; i++) out += String.fromCharCode(arr[i]);
       return btoa(out);
     };
-    // Validate seed first
     try { await generateTOTP(seed); } catch { toast.error("Invalid base32 seed"); return; }
     const { error } = await supabase.from("vault_entries").insert({
       user_id: userId, site_name: site, category: "TOTP",
@@ -121,28 +118,32 @@ export default function TOTPPage() {
     loadEntries();
   }
 
+  const urgencyColor = secs <= 7 ? "#ef4444" : secs <= 15 ? "#f59e0b" : "#10b981";
+
   return (
     <div className="p-8 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-black gradient-text mb-1">Authenticator</h1>
           <p className="text-sm text-muted">TOTP codes — RFC 6238 via Web Crypto. Seeds encrypted with AES-256-GCM.</p>
         </div>
-        <button onClick={() => setAdding(a => !a)} className="btn-primary"><Plus size={14} /> Add account</button>
+        <button onClick={() => setAdding(a => !a)} className={adding ? "btn-secondary" : "btn-primary"}>
+          {adding ? <><X size={14} /> Cancel</> : <><Plus size={14} /> Add account</>}
+        </button>
       </div>
 
       {/* Add form */}
       {adding && (
-        <div className="card-hover p-6 mb-5 border-accent/20 animate-slide-in">
-          <h3 className="font-bold mb-4 text-sm">Add authenticator account</h3>
+        <div className="glass-card p-6 mb-6 animate-slide-in" style={{ border: "1px solid rgba(16,185,129,0.2)" }}>
+          <h3 className="font-bold mb-5 text-sm">Add authenticator account</h3>
           <div className="grid md:grid-cols-2 gap-3 mb-3">
             <div><label className="label">Service name</label><input className="input" value={site} onChange={e => setSite(e.target.value)} placeholder="GitHub, Google…" /></div>
             <div><label className="label">Account / Email</label><input className="input" value={account} onChange={e => setAccount(e.target.value)} placeholder="you@example.com" /></div>
           </div>
-          <div className="mb-4">
+          <div className="mb-5">
             <label className="label">Base32 secret seed</label>
-            <input className="input font-mono" value={seed} onChange={e => setSeed(e.target.value)} placeholder="JBSWY3DPEHPK3PXP (from QR code setup)" />
-            <p className="text-[10px] text-muted mt-1">Find this in the "Can't scan QR code?" link on any 2FA setup page.</p>
+            <input className="input font-mono" value={seed} onChange={e => setSeed(e.target.value)} placeholder="JBSWY3DPEHPK3PXP" />
+            <p className="text-[10px] text-muted mt-1.5">Find this in the "Can't scan QR code?" link on any 2FA setup page.</p>
           </div>
           <div className="flex gap-2">
             <button onClick={addEntry} className="btn-primary" disabled={!site || !seed}>Add account</button>
@@ -152,11 +153,13 @@ export default function TOTPPage() {
       )}
 
       {loading ? (
-        <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="card h-20 animate-pulse opacity-40" />)}</div>
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => <div key={i} className="glass-card h-24 skeleton" />)}
+        </div>
       ) : entries.length === 0 ? (
-        <div className="card p-12 text-center text-muted">
+        <div className="glass-card p-12 text-center text-muted">
           <ScanLine size={40} className="mx-auto mb-3 opacity-30" />
-          <div className="font-semibold mb-1">No authenticator accounts</div>
+          <div className="font-semibold mb-1 text-fg">No authenticator accounts</div>
           <div className="text-sm">Add a TOTP seed to start generating codes.</div>
         </div>
       ) : (
@@ -164,15 +167,37 @@ export default function TOTPPage() {
           {entries.map(e => {
             const code = codes[e.id] || "------";
             const formatted = code.slice(0, 3) + " " + code.slice(3);
+            const initials = e.site.slice(0, 2).toUpperCase();
             return (
-              <div key={e.id} className="card-hover p-5 flex items-center gap-5">
+              <div
+                key={e.id}
+                className="glass-card px-5 py-4 flex items-center gap-5 transition-all duration-200"
+                style={{ border: `1px solid ${urgencyColor}20` }}
+                onMouseEnter={el => { (el.currentTarget as HTMLElement).style.borderColor = urgencyColor + "35"; }}
+                onMouseLeave={el => { (el.currentTarget as HTMLElement).style.borderColor = urgencyColor + "20"; }}
+              >
+                {/* Site avatar */}
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0"
+                  style={{ background: `linear-gradient(135deg, rgba(16,185,129,0.4), rgba(5,150,105,0.2))`, border: "1px solid rgba(16,185,129,0.2)" }}
+                >
+                  {initials}
+                </div>
+
                 <TOTPRing secs={secs} />
+
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm">{e.site}</div>
-                  <div className="text-xs text-muted">{e.account}</div>
-                  <div className="font-mono text-2xl font-black tracking-[0.2em] mt-1 text-fg">{formatted}</div>
+                  <div className="text-xs text-muted truncate">{e.account}</div>
+                  <div
+                    className="font-mono text-2xl font-black tracking-[0.2em] mt-1"
+                    style={{ color: urgencyColor, textShadow: `0 0 12px ${urgencyColor}50` }}
+                  >
+                    {formatted}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => copyCode(e.id, code)} className="btn-secondary gap-2 text-sm">
                     {copied === e.id ? <Check size={13} className="text-success" /> : <Copy size={13} />}
                     {copied === e.id ? "Copied" : "Copy"}

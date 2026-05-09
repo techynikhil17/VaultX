@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
-import { Shield, AlertTriangle, Repeat, Heart, KeyRound, Clock, Zap } from "lucide-react";
+import { Shield, AlertTriangle, Repeat, Heart, KeyRound, Clock, Zap, ArrowUpRight } from "lucide-react";
 import { MotionList, MotionItem } from "@/components/motion";
 import { createClient } from "@/lib/supabase/client";
 import { useVault } from "@/lib/vault-context";
@@ -51,7 +51,7 @@ function HealthGauge({ score }: { score: number }) {
             strokeDasharray={circ} strokeDashoffset={offset}
             strokeLinecap="round"
             transform="rotate(-90 64 64)"
-            style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1), stroke 0.5s" }}
+            style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1), stroke 0.5s", filter: `drop-shadow(0 0 8px ${color}60)` }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -67,15 +67,34 @@ function HealthGauge({ score }: { score: number }) {
   );
 }
 
-function Stat({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  color: string;
+  glowColor?: string;
+  desc?: string;
+}
+
+function StatCard({ icon, label, value, color, glowColor, desc }: StatCardProps) {
   const displayed = useCountUp(value);
   return (
-    <div>
-      <div className={`flex items-center gap-1.5 mb-2 ${color}`}>
+    <div
+      className="glass-card p-5 relative overflow-hidden transition-all duration-200"
+      style={{ border: `1px solid ${glowColor ? glowColor + "25" : "rgba(255,255,255,0.07)"}` }}
+    >
+      {glowColor && (
+        <div
+          className="absolute top-0 right-0 w-24 h-24 pointer-events-none"
+          style={{ background: `radial-gradient(circle at 80% 20%, ${glowColor}15 0%, transparent 70%)` }}
+        />
+      )}
+      <div className={`flex items-center gap-2 mb-3 ${color}`}>
         {icon}
         <span className="text-[10px] uppercase tracking-widest font-bold opacity-80">{label}</span>
       </div>
-      <div className={`text-5xl font-black tabular-nums ${color}`}>{displayed}</div>
+      <div className={`text-4xl font-black tabular-nums ${color}`}>{displayed}</div>
+      {desc && <div className="text-xs text-muted mt-1.5">{desc}</div>}
     </div>
   );
 }
@@ -136,11 +155,11 @@ export default function DashboardPage() {
         <div className="skeleton h-9 w-48 mb-2" />
         <div className="skeleton h-4 w-64" />
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 pb-10 border-b border-white/[0.05] mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[...Array(4)].map((_, i) => (
-          <div key={i}>
-            <div className="skeleton h-3 w-16 mb-3" />
-            <div className="skeleton h-12 w-20" />
+          <div key={i} className="glass-card p-5">
+            <div className="skeleton h-3 w-16 mb-4" />
+            <div className="skeleton h-10 w-20" />
           </div>
         ))}
       </div>
@@ -150,7 +169,7 @@ export default function DashboardPage() {
   return (
     <div className="p-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-12">
+      <div className="flex items-center justify-between mb-10">
         <div>
           <h1 className="text-3xl font-black gradient-text mb-1">Dashboard</h1>
           <p className="text-sm text-muted">Your vault security at a glance.</p>
@@ -161,68 +180,100 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* Stats — floating numbers, no cards */}
-      <MotionList className="grid grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-8 pb-12 border-b border-white/[0.05]">
-        <MotionItem><Stat icon={<KeyRound size={14} />} label="Total" value={stats.total} color="text-fg" /></MotionItem>
-        <MotionItem><Stat icon={<AlertTriangle size={14} />} label="Weak" value={stats.weak} color="text-warn" /></MotionItem>
-        <MotionItem><Stat icon={<Repeat size={14} />} label="Reused" value={stats.reused} color="text-warn" /></MotionItem>
-        <MotionItem><Stat icon={<Shield size={14} />} label="Breached" value={stats.breached} color="text-danger" /></MotionItem>
+      {/* Stat cards */}
+      <MotionList className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <MotionItem>
+          <StatCard icon={<KeyRound size={14} />} label="Total" value={stats.total} color="text-fg" desc="Vault entries" />
+        </MotionItem>
+        <MotionItem>
+          <StatCard icon={<AlertTriangle size={14} />} label="Weak" value={stats.weak} color="text-warn" glowColor="#f59e0b" desc="Below score 45" />
+        </MotionItem>
+        <MotionItem>
+          <StatCard icon={<Repeat size={14} />} label="Reused" value={stats.reused} color="text-warn" glowColor="#f59e0b" desc="Duplicate passwords" />
+        </MotionItem>
+        <MotionItem>
+          <StatCard icon={<Shield size={14} />} label="Breached" value={stats.breached} color="text-danger" glowColor="#ef4444" desc="Found in HIBP" />
+        </MotionItem>
       </MotionList>
 
       {/* Health row */}
-      <div className="flex flex-wrap gap-12 items-start py-12 border-b border-white/[0.05]">
-        <HealthGauge score={stats.health} />
+      <div className="grid md:grid-cols-3 gap-4 mb-8">
+        {/* Health gauge card */}
+        <div className="glass-card p-6 flex flex-col items-center justify-center" style={{ border: "1px solid rgba(16,185,129,0.15)" }}>
+          <HealthGauge score={stats.health} />
+        </div>
 
-        <div className="flex-1 min-w-[200px]">
+        {/* Password age card */}
+        <div className="glass-card p-6 relative overflow-hidden" style={{ border: "1px solid rgba(245,158,11,0.15)" }}>
+          <div
+            className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
+            style={{ background: "radial-gradient(circle at 80% 20%, rgba(245,158,11,0.08) 0%, transparent 70%)" }}
+          />
           <div className="flex items-center gap-2 mb-3">
-            <Clock size={14} className="text-amber-400" />
-            <span className="text-xs font-bold uppercase tracking-widest text-amber-400 opacity-80">Password age</span>
+            <Clock size={14} className="text-warn" />
+            <span className="text-[10px] uppercase tracking-widest font-bold text-warn opacity-80">Password age</span>
           </div>
-          <div className="text-5xl font-black text-amber-400 mb-2">{stats.stale}</div>
-          <p className="text-sm text-muted mb-4">Passwords not rotated in 90+ days</p>
-          <div className="h-1 bg-white/[0.05] rounded-full overflow-hidden w-48">
-            <div className="h-full bg-amber-400 rounded-full transition-all duration-1000" style={{ width: `${stats.total ? (stats.stale / stats.total) * 100 : 0}%` }} />
+          <div className="text-4xl font-black text-warn mb-1.5">{stats.stale}</div>
+          <p className="text-xs text-muted mb-4">Not rotated in 90+ days</p>
+          <div className="h-1 bg-white/[0.05] rounded-full overflow-hidden">
+            <div className="h-full bg-warn rounded-full transition-all duration-1000" style={{ width: `${stats.total ? (stats.stale / stats.total) * 100 : 0}%` }} />
           </div>
         </div>
 
-        <div className="flex-1 min-w-[220px]">
+        {/* Security tips card */}
+        <div className="glass-card p-6 relative overflow-hidden" style={{ border: "1px solid rgba(16,185,129,0.1)" }}>
+          <div
+            className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
+            style={{ background: "radial-gradient(circle at 80% 20%, rgba(16,185,129,0.06) 0%, transparent 70%)" }}
+          />
           <div className="flex items-center gap-2 mb-4">
             <Heart size={14} className="text-accent" />
-            <span className="text-xs font-bold uppercase tracking-widest text-accent opacity-80">Security tips</span>
+            <span className="text-[10px] uppercase tracking-widest font-bold text-accent opacity-80">Security tips</span>
           </div>
           <ul className="space-y-3 text-sm text-muted">
-            <li className="flex items-start gap-2.5"><span className="text-accent mt-0.5 shrink-0">→</span>Enable 2FA and store TOTP seeds in Authenticator.</li>
-            <li className="flex items-start gap-2.5"><span className="text-accent mt-0.5 shrink-0">→</span>Run a health scan monthly to catch newly breached passwords.</li>
-            <li className="flex items-start gap-2.5"><span className="text-accent mt-0.5 shrink-0">→</span>Use the Generator (⌘K) — 20+ chars minimum.</li>
+            <li className="flex items-start gap-2.5"><span className="text-accent mt-0.5 shrink-0 font-bold">→</span>Enable 2FA and store TOTP seeds in Authenticator.</li>
+            <li className="flex items-start gap-2.5"><span className="text-accent mt-0.5 shrink-0 font-bold">→</span>Run a health scan monthly to catch newly breached passwords.</li>
+            <li className="flex items-start gap-2.5"><span className="text-accent mt-0.5 shrink-0 font-bold">→</span>Use the Generator — 20+ chars minimum.</li>
           </ul>
         </div>
       </div>
 
-      {/* Flagged */}
-      <div className="pt-10">
-        <h2 className="font-bold mb-6 flex items-center gap-2 text-sm">
+      {/* Flagged passwords */}
+      <div>
+        <div className="flex items-center gap-3 mb-5">
           <AlertTriangle size={14} className="text-warn" />
-          Flagged passwords
+          <h2 className="font-bold text-sm">Flagged passwords</h2>
           {stats.flagged.length > 0 && <span className="badge badge-warn">{stats.flagged.length}</span>}
-        </h2>
+        </div>
+
         {stats.flagged.length === 0 ? (
-          <div className="py-12 text-center text-muted">
+          <div className="glass-card py-14 text-center text-muted">
             <div className="text-4xl mb-3">🎉</div>
-            <div className="text-sm">Nothing flagged. Your vault is clean.</div>
+            <div className="font-semibold text-fg mb-1">Nothing flagged</div>
+            <div className="text-sm">Your vault is clean.</div>
           </div>
         ) : (
-          <MotionList className="divide-y divide-white/[0.04]">
+          <MotionList className="space-y-2">
             {stats.flagged.slice(0, 12).map((f, i) => (
               <MotionItem key={i}>
-                <div className="py-3.5 flex items-center justify-between gap-4 group hover:bg-white/[0.02] -mx-3 px-3 rounded-lg transition-colors">
+                <div
+                  className="glass-card-sm px-4 py-3.5 flex items-center justify-between gap-4 group transition-all duration-150"
+                  style={{ border: `1px solid ${f.severity === "danger" ? "rgba(239,68,68,0.15)" : "rgba(245,158,11,0.15)"}` }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ""; }}
+                >
                   <div className="flex items-center gap-3">
-                    <div className={`w-1 h-5 rounded-full shrink-0 ${f.severity === "danger" ? "bg-danger" : "bg-warn"}`} />
+                    <div className={`w-1.5 h-5 rounded-full shrink-0 ${f.severity === "danger" ? "bg-danger" : "bg-warn"}`}
+                      style={{ boxShadow: f.severity === "danger" ? "0 0 8px rgba(239,68,68,0.4)" : "0 0 8px rgba(245,158,11,0.4)" }}
+                    />
                     <div>
                       <div className="font-medium text-sm">{f.site}</div>
                       <div className="text-xs text-muted">{f.reason}</div>
                     </div>
                   </div>
-                  <Link href="/vault" className="text-xs text-accent hover:text-accent/80 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">Fix →</Link>
+                  <Link href="/vault" className="flex items-center gap-1 text-xs text-accent hover:text-accent/80 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    Fix <ArrowUpRight size={11} />
+                  </Link>
                 </div>
               </MotionItem>
             ))}

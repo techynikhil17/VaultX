@@ -18,7 +18,6 @@ const VALID_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 function emailError(val: string): string | null {
   if (!val || !val.includes("@")) return null;
   if (VALID_EMAIL_RE.test(val)) return null;
-  // Give a more specific hint
   const [local, domain] = val.split("@");
   if (!local) return "Missing the part before @";
   if (!domain) return "Missing domain after @";
@@ -61,14 +60,30 @@ export function VaultEntryDialog({ open, onClose, initial, onSave }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-[#07071a]/80 z-50 flex items-center justify-center p-4 overflow-y-auto" style={{ backdropFilter: "blur(12px)" }}>
-      <form onSubmit={submit} className="card w-full max-w-2xl my-8 animate-slide-in border-white/10 bg-[#0b0b20]">
-        <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+      style={{ background: "rgba(7,7,26,0.85)", backdropFilter: "blur(14px)" }}
+    >
+      <form
+        onSubmit={submit}
+        className="w-full max-w-2xl my-8 animate-slide-in rounded-2xl overflow-hidden"
+        style={{
+          background: "rgba(11,11,32,0.95)",
+          border: "1px solid rgba(255,255,255,0.09)",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 1px rgba(16,185,129,0.2)",
+        }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between px-6 py-5"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+        >
           <h2 className="font-bold text-base">{d.id ? "Edit entry" : "New vault entry"}</h2>
           <button type="button" onClick={onClose} className="btn-ghost p-1.5 rounded-lg"><X size={16} /></button>
         </div>
 
-        <div className="p-5 grid md:grid-cols-2 gap-4">
+        {/* Body */}
+        <div className="p-6 grid md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <label className="label">Site name</label>
             <input
@@ -99,7 +114,7 @@ export function VaultEntryDialog({ open, onClose, initial, onSave }: Props) {
 
           <div>
             <label className="label">Category</label>
-            <select className="input" value={d.category} onChange={e => setD({ ...d, category: e.target.value as any })}>
+            <select className="input" value={d.category} onChange={e => setD({ ...d, category: e.target.value as VaultEntryInput["category"] })}>
               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
@@ -123,7 +138,10 @@ export function VaultEntryDialog({ open, onClose, initial, onSave }: Props) {
               <button type="button" onClick={quickGen} className="btn-secondary shrink-0"><Wand2 size={14} /> Generate</button>
             </div>
             {showStrength && d.password && (
-              <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+              <div
+                className="mt-4 p-4 rounded-xl"
+                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
+              >
                 <StrengthMeter password={d.password} />
               </div>
             )}
@@ -140,7 +158,11 @@ export function VaultEntryDialog({ open, onClose, initial, onSave }: Props) {
           </div>
         </div>
 
-        <div className="p-5 border-t border-white/[0.06] flex justify-end gap-2">
+        {/* Footer */}
+        <div
+          className="px-6 py-5 flex justify-end gap-2"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
+        >
           <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
           <button className="btn-primary" disabled={busy || !!usernameErr}>
             {busy ? "Saving…" : d.id ? "Update entry" : "Save entry"}

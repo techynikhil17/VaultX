@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, KeyRound, Wand2, ShieldAlert, ScrollText,
-  LogOut, ShieldCheck, User, ScanLine, FileText, Lock
+  LogOut, ShieldCheck, User, ScanLine, FileText, Lock, Search
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useVault } from "@/lib/vault-context";
@@ -38,9 +38,18 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-56 shrink-0 flex flex-col border-r border-white/[0.06]" style={{ minHeight: "100vh" }}>
+    <aside
+      className="w-56 shrink-0 flex flex-col"
+      style={{
+        minHeight: "100vh",
+        background: "rgba(7,7,26,0.75)",
+        backdropFilter: "blur(14px) saturate(130%)",
+        WebkitBackdropFilter: "blur(14px) saturate(130%)",
+        borderRight: "1px solid rgba(255,255,255,0.06)",
+      }}
+    >
       {/* Logo */}
-      <div className="px-5 py-5 flex items-center gap-2.5">
+      <div className="px-5 pt-5 pb-4 flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-2 flex items-center justify-center shadow-glow-sm">
           <ShieldCheck size={15} className="text-white" />
         </div>
@@ -50,12 +59,25 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Shortcut hint */}
-      <div className="mx-3 mb-3 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center gap-2 cursor-pointer hover:border-accent/30 transition-colors group"
-        onClick={() => { const e = new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }); window.dispatchEvent(e); }}>
-        <ShieldCheck size={12} className="text-muted group-hover:text-accent transition-colors" />
-        <span className="text-xs text-muted flex-1">Search</span>
-        <kbd className="text-[9px] bg-white/5 text-muted px-1.5 py-0.5 rounded border border-white/10">⌘K</kbd>
+      {/* Search shortcut */}
+      <div
+        className="mx-3 mb-4 px-3 py-2 rounded-xl flex items-center gap-2 cursor-pointer transition-all duration-150 group"
+        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+        onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }))}
+        onMouseEnter={e => {
+          const el = e.currentTarget as HTMLElement;
+          el.style.borderColor = "rgba(16,185,129,0.35)";
+          el.style.background = "rgba(16,185,129,0.04)";
+        }}
+        onMouseLeave={e => {
+          const el = e.currentTarget as HTMLElement;
+          el.style.borderColor = "rgba(255,255,255,0.07)";
+          el.style.background = "rgba(255,255,255,0.03)";
+        }}
+      >
+        <Search size={12} className="text-muted group-hover:text-accent transition-colors shrink-0" />
+        <span className="text-xs text-muted flex-1">Search vault</span>
+        <kbd className="text-[9px] bg-white/[0.06] text-muted px-1.5 py-0.5 rounded border border-white/[0.08] shrink-0">⌘K</kbd>
       </div>
 
       {/* Nav */}
@@ -68,44 +90,78 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-150 group relative",
-                active
-                  ? "bg-accent/10 text-accent"
-                  : "text-muted hover:text-fg hover:bg-white/[0.04] hover:translate-x-0.5"
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 group relative overflow-hidden",
+                active ? "text-accent" : "text-muted hover:text-fg"
               )}
+              style={{
+                borderLeft: active ? "3px solid #10b981" : "3px solid transparent",
+                background: active ? "rgba(16,185,129,0.06)" : undefined,
+              }}
+              onMouseEnter={e => {
+                if (!active) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)";
+              }}
+              onMouseLeave={e => {
+                if (!active) (e.currentTarget as HTMLElement).style.background = "";
+              }}
             >
               {active && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-accent rounded-r-full shadow-glow-sm" />
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ background: "radial-gradient(ellipse at 0% 50%, rgba(16,185,129,0.12) 0%, transparent 70%)" }}
+                />
               )}
               <Icon
                 size={15}
                 className={cn(
-                  "transition-all duration-150",
-                  active ? "text-accent" : "text-muted group-hover:text-fg group-hover:scale-110"
+                  "shrink-0 transition-all duration-150 relative z-10",
+                  active ? "text-accent" : "group-hover:text-fg group-hover:scale-110"
                 )}
               />
-              <span className="font-medium">{item.label}</span>
+              <span className="font-medium relative z-10">{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* Bottom */}
-      <div className="p-3 border-t border-white/[0.06] space-y-1">
+      {/* Bottom actions */}
+      <div
+        className="p-3 space-y-0.5"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+      >
         {unlocked && (
           <button
             onClick={() => { lock(); toast.success("Vault locked"); }}
-            className="flex items-center gap-3 px-3 py-2 w-full rounded-xl text-sm text-muted hover:text-warn hover:bg-warn/5 transition-all"
+            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm text-muted transition-all duration-150"
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.color = "#f59e0b";
+              el.style.background = "rgba(245,158,11,0.06)";
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.color = "";
+              el.style.background = "";
+            }}
           >
-            <Lock size={14} />
+            <Lock size={14} className="shrink-0" />
             <span>Lock vault</span>
           </button>
         )}
         <button
           onClick={logout}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-xl text-sm text-muted hover:text-fg hover:bg-white/[0.04] transition-all"
+          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm text-muted transition-all duration-150"
+          onMouseEnter={e => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.color = "#e0e0f5";
+            el.style.background = "rgba(255,255,255,0.04)";
+          }}
+          onMouseLeave={e => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.color = "";
+            el.style.background = "";
+          }}
         >
-          <LogOut size={14} />
+          <LogOut size={14} className="shrink-0" />
           <span>Logout</span>
         </button>
       </div>

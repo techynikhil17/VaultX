@@ -65,17 +65,29 @@ export default function ProfilePage() {
       </div>
 
       {/* Account info */}
-      <div className="space-y-5 pb-10 border-b border-white/[0.05] mb-10">
-        <Row icon={<Mail size={14} />} label="Email" value={email} />
-        <Row icon={<KeyRound size={14} />} label="Vault entries" value={String(count)} />
-        <Row icon={<Activity size={14} />} label="Account created" value={createdAt} />
-        <Row icon={<ShieldCheck size={14} />} label="Vault state" value={unlocked ? "🔓 Unlocked" : "🔒 Locked"} />
+      <div className="glass-card p-6 mb-5" style={{ border: "1px solid rgba(16,185,129,0.1)" }}>
+        <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted mb-5">Account</h2>
+        <div className="space-y-4">
+          <Row icon={<Mail size={14} />} label="Email" value={email} />
+          <Row icon={<KeyRound size={14} />} label="Vault entries" value={String(count)} />
+          <Row icon={<Activity size={14} />} label="Account created" value={createdAt} />
+          <div className="flex items-center gap-3">
+            <div className="text-muted w-5 shrink-0"><ShieldCheck size={14} /></div>
+            <div className="flex-1">
+              <div className="text-[10px] text-muted uppercase tracking-widest mb-0.5">Vault state</div>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${unlocked ? "bg-success shadow-glow-success" : "bg-muted"}`} />
+                <span className="font-medium text-sm">{unlocked ? "Unlocked" : "Locked"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Actions */}
-      <div>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-muted mb-5">Actions</h2>
-        <div className="space-y-2.5">
+      <div className="glass-card p-6">
+        <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted mb-5">Actions</h2>
+        <div className="space-y-3">
           <button
             onClick={() => { lock(); toast.success("Vault locked — key cleared from memory"); }}
             className="btn-secondary w-full justify-center gap-2"
@@ -98,7 +110,7 @@ export default function ProfilePage() {
 
 function Row({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 group">
+    <div className="flex items-center gap-3">
       <div className="text-muted w-5 shrink-0">{icon}</div>
       <div className="flex-1">
         <div className="text-[10px] text-muted uppercase tracking-widest mb-0.5">{label}</div>

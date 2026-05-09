@@ -189,3 +189,17 @@ input[type="checkbox"] { accent-color: #6366f1; }
   50% { opacity: 0.6; }
 }
 .skeleton { animation: skeleton-pulse 1.5s ease-in-out infinite; background: rgba(255,255,255,0.06); border-radius: 8px; }
+
+/* Glass card — consistent glass surface for internal UI */
+.glass-card {
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+}
+.glass-card-sm {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+}

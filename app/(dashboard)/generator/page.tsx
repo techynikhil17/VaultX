@@ -29,37 +29,52 @@ export default function GeneratorPage() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <div className="mb-10">
+      <div className="mb-8">
         <h1 className="text-3xl font-black gradient-text mb-1">Generator</h1>
         <p className="text-sm text-muted">Cryptographically secure via <span className="font-mono text-accent/80">crypto.getRandomValues</span>. Press ⌘G to regenerate.</p>
       </div>
 
-      {/* Main password */}
-      <div className="pb-10 border-b border-white/[0.05]">
+      {/* Main password output */}
+      <div className="glass-card p-6 mb-5" style={{ border: "1px solid rgba(16,185,129,0.15)" }}>
         <div className="flex items-center gap-2 mb-5">
-          <input className="input flex-1 font-mono text-lg tracking-wider" value={pw} readOnly />
-          <CopyButton value={pw} label="Password" className="btn-secondary" />
-          <button onClick={regen} className="btn-secondary" title="⌘G"><RefreshCw size={14} /></button>
+          <input
+            className="input flex-1 font-mono text-lg tracking-wider"
+            style={{ background: "rgba(255,255,255,0.03)", fontSize: "1.05rem" }}
+            value={pw}
+            readOnly
+          />
+          <CopyButton value={pw} label="Password" className="btn-secondary shrink-0" />
+          <button onClick={regen} className="btn-secondary shrink-0" title="⌘G">
+            <RefreshCw size={14} />
+          </button>
         </div>
         {pw && <StrengthMeter password={pw} showDNA={true} />}
       </div>
 
       {/* Options */}
-      <div className="py-10 border-b border-white/[0.05]">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-muted mb-6">Options</h2>
-        <div className="mb-6">
+      <div className="glass-card p-6 mb-5">
+        <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted mb-6">Options</h2>
+
+        {/* Length slider */}
+        <div className="mb-7">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium">Length</span>
-            <span className="font-mono text-accent text-sm font-bold">{opts.length} chars</span>
+            <span className="font-mono text-accent text-sm font-bold bg-accent/10 px-2.5 py-0.5 rounded-lg border border-accent/20">{opts.length} chars</span>
           </div>
           <input
             type="range" min={8} max={128} value={opts.length}
             onChange={e => setOpts({ ...opts, length: parseInt(e.target.value) })}
-            className="w-full h-1"
+            className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+            style={{ accentColor: "#10b981" }}
           />
-          <div className="flex justify-between text-[10px] text-muted mt-1"><span>8</span><span>128</span></div>
+          <div className="flex justify-between text-[10px] text-muted mt-2">
+            <span>8</span>
+            <span>128</span>
+          </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+
+        {/* Checkboxes */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {[
             { key: "upper", label: "Uppercase A–Z" },
             { key: "lower", label: "Lowercase a–z" },
@@ -67,29 +82,42 @@ export default function GeneratorPage() {
             { key: "symbols", label: "Symbols !@#$%" },
             { key: "excludeAmbiguous", label: "Exclude Il1O0" },
             { key: "pronounceable", label: "Pronounceable" },
-          ].map(({ key, label }) => (
-            <label key={key} className="flex items-center gap-2.5 cursor-pointer group">
-              <div
-                className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${(opts as any)[key] ? "bg-accent border-accent" : "border-white/20 bg-white/[0.04]"}`}
-                onClick={() => setOpts({ ...opts, [key]: !(opts as any)[key] })}
-              >
-                {(opts as any)[key] && <Check size={10} className="text-white" />}
-              </div>
-              <span className="text-sm text-muted group-hover:text-fg transition-colors">{label}</span>
-            </label>
-          ))}
+          ].map(({ key, label }) => {
+            const on = (opts as unknown as Record<string, boolean>)[key];
+            return (
+              <label key={key} className="flex items-center gap-3 cursor-pointer group py-1.5">
+                <div
+                  className="w-4 h-4 rounded-md flex items-center justify-center border transition-all duration-150 shrink-0"
+                  style={{
+                    background: on ? "#10b981" : "rgba(255,255,255,0.04)",
+                    borderColor: on ? "#10b981" : "rgba(255,255,255,0.15)",
+                    boxShadow: on ? "0 0 8px rgba(16,185,129,0.3)" : undefined,
+                  }}
+                  onClick={() => setOpts({ ...opts, [key]: !on } as GenOptions)}
+                >
+                  {on && <Check size={10} className="text-white" />}
+                </div>
+                <span className="text-sm text-muted group-hover:text-fg transition-colors">{label}</span>
+              </label>
+            );
+          })}
         </div>
       </div>
 
       {/* Bulk suggestions */}
-      <div className="pt-10">
+      <div className="glass-card p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-muted">More options</h2>
-          <button onClick={regen} className="btn-ghost text-xs gap-1"><RefreshCw size={11} /> Refresh</button>
+          <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted">More options</h2>
+          <button onClick={regen} className="btn-ghost text-xs gap-1.5"><RefreshCw size={11} /> Refresh</button>
         </div>
-        <div className="divide-y divide-white/[0.04]">
+        <div className="space-y-1">
           {bulk.map((b, i) => (
-            <div key={i} className="flex items-center gap-3 py-3 -mx-2 px-2 rounded-lg hover:bg-white/[0.025] transition-colors group">
+            <div
+              key={i}
+              className="flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all duration-150 group"
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ""; }}
+            >
               <span className="font-mono text-sm text-fg/80 flex-1 truncate">{b}</span>
               <CopyButton value={b} label="Password" />
             </div>

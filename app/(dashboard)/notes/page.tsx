@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Pencil, Trash2, FileText, X, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, X, Check, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useVault } from "@/lib/vault-context";
@@ -53,7 +53,7 @@ export default function NotesPage() {
       return btoa(out);
     };
     const contentEnc = await enc(content);
-    const placeholder = await enc(""); // username + password fields unused
+    const placeholder = await enc("");
     if (editing?.id) {
       await supabase.from("vault_entries").update({ site_name: title, notes_encrypted: contentEnc, iv: ivB64 }).eq("id", editing.id);
       toast.success("Note updated");
@@ -72,7 +72,7 @@ export default function NotesPage() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-black gradient-text mb-1">Secure Notes</h1>
           <p className="text-sm text-muted">Encrypted notes — AES-256-GCM. Content never stored in plaintext.</p>
@@ -82,25 +82,41 @@ export default function NotesPage() {
 
       {/* Editor */}
       {editing !== null && (
-        <div className="pb-8 mb-8 border-b border-white/[0.05] animate-slide-in">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-sm">{editing.id ? "Edit note" : "New note"}</h3>
-            <button onClick={() => setEditing(null)} className="btn-ghost p-1"><X size={14} /></button>
+        <div className="glass-card p-6 mb-8 animate-slide-in" style={{ border: "1px solid rgba(16,185,129,0.2)" }}>
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <Lock size={13} className="text-accent" />
+              {editing.id ? "Edit note" : "New encrypted note"}
+            </h3>
+            <button onClick={() => setEditing(null)} className="btn-ghost p-1.5 rounded-lg"><X size={14} /></button>
           </div>
-          <input className="input mb-3 font-semibold" value={title} onChange={e => setTitle(e.target.value)} placeholder="Note title…" />
-          <textarea className="input min-h-[200px] resize-y font-mono text-sm leading-relaxed"
-            value={content} onChange={e => setContent(e.target.value)} placeholder="Write anything here — it's fully encrypted before saving." />
-          <div className="flex gap-2 mt-3">
-            <button onClick={save} disabled={busy || !title} className="btn-primary"><Check size={14} />{busy ? "Saving…" : "Save"}</button>
+          <input
+            className="input mb-3 font-semibold text-base"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="Note title…"
+          />
+          <textarea
+            className="input min-h-[220px] resize-y font-mono text-sm leading-relaxed"
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            placeholder="Write anything here — it's fully encrypted before saving."
+          />
+          <div className="flex gap-2 mt-4">
+            <button onClick={save} disabled={busy || !title} className="btn-primary">
+              <Check size={14} />{busy ? "Saving…" : "Save note"}
+            </button>
             <button onClick={() => setEditing(null)} className="btn-secondary">Cancel</button>
           </div>
         </div>
       )}
 
       {loading ? (
-        <div className="grid md:grid-cols-2 gap-3">{[...Array(4)].map((_, i) => <div key={i} className="skeleton h-28 w-full rounded-2xl" />)}</div>
+        <div className="grid md:grid-cols-2 gap-3">
+          {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-28 w-full rounded-2xl" />)}
+        </div>
       ) : notes.length === 0 ? (
-        <div className="py-16 text-center text-muted">
+        <div className="glass-card py-16 text-center text-muted">
           <FileText size={36} className="mx-auto mb-3 opacity-20" />
           <div className="font-semibold mb-1 text-fg">No notes yet</div>
           <div className="text-sm">Click New note to create your first encrypted note.</div>
@@ -108,11 +124,35 @@ export default function NotesPage() {
       ) : (
         <div className="grid md:grid-cols-2 gap-3">
           {notes.map(n => (
-            <div key={n.id} className="border border-white/[0.07] rounded-2xl p-5 group cursor-pointer hover:border-accent/25 hover:bg-white/[0.02] transition-all duration-200" onClick={() => openEdit(n)}>
+            <div
+              key={n.id}
+              className="glass-card p-5 group cursor-pointer transition-all duration-200 relative overflow-hidden"
+              style={{ border: "1px solid rgba(139,92,246,0.15)" }}
+              onClick={() => openEdit(n)}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.borderColor = "rgba(139,92,246,0.3)";
+                el.style.background = "rgba(139,92,246,0.03)";
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.borderColor = "rgba(139,92,246,0.15)";
+                el.style.background = "";
+              }}
+            >
+              <div
+                className="absolute top-0 right-0 w-20 h-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ background: "radial-gradient(circle at 80% 20%, rgba(139,92,246,0.08) 0%, transparent 70%)" }}
+              />
               <div className="flex items-start justify-between gap-2 mb-2">
-                <h3 className="font-semibold text-sm truncate">{n.title}</h3>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                  onClick={e => e.stopPropagation()}>
+                <h3 className="font-semibold text-sm truncate flex items-center gap-1.5">
+                  <FileText size={12} className="text-violet-400 shrink-0" />
+                  {n.title}
+                </h3>
+                <div
+                  className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  onClick={e => e.stopPropagation()}
+                >
                   <button onClick={() => openEdit(n)} className="btn-ghost p-1.5"><Pencil size={12} /></button>
                   <button onClick={() => remove(n.id)} className="btn-ghost p-1.5 hover:text-danger"><Trash2 size={12} /></button>
                 </div>
