@@ -41,12 +41,19 @@ export default function SignupPage() {
     if (!parsed.success) { toast.error(parsed.error.errors[0].message); return; }
     if (strength.score < 45) { toast.error("Master password is too weak — pick something stronger"); return; }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) {
       setLoading(false);
       toast.error(error.message);
       return;
     }
+    if (!data.session) {
+      // Email confirmation is enabled in Supabase — no session yet.
+      setLoading(false);
+      toast.success("Check your email and click the confirmation link, then sign in.");
+      return;
+    }
+    // Email confirmation is disabled — session created immediately.
     window.location.href = "/dashboard";
   }
 
