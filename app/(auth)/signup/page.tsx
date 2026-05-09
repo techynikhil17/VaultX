@@ -47,8 +47,7 @@ export default function SignupPage() {
       toast.error(error.message);
       return;
     }
-    router.refresh();
-    router.push("/dashboard");
+    window.location.href = "/dashboard";
   }
 
   return (

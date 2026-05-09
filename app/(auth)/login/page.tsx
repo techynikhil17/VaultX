@@ -34,10 +34,9 @@ export default function LoginPage() {
       return;
     }
     if (data.user) supabase.from("activity_logs").insert({ user_id: data.user.id, action: "login" });
-    // refresh() clears the Next.js router cache so the middleware sees the new
-    // auth cookie immediately — without it, push() can race the cookie write in production
-    router.refresh();
-    router.push("/dashboard");
+    // Hard navigation so the browser sends the new auth cookie in the request.
+    // router.push() is client-side and races the cookie write in production.
+    window.location.href = "/dashboard";
   }
 
   return (
